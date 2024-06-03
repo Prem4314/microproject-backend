@@ -1,4 +1,4 @@
-package com.ats;
+package com.ats.junittest;
 
 
 

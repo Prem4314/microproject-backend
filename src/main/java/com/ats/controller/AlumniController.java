@@ -3,6 +3,7 @@ package com.ats.controller;
 import com.ats.model.*;
 import com.ats.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -70,34 +71,42 @@ public class AlumniController {
         }).collect(Collectors.toList());
         return ResponseEntity.ok(result);
     }
-
     @PostMapping("/login")
     public ResponseEntity<Object> loginAlumni(@RequestBody Alumni loginRequest) {
         Alumni alumni = alumniService.findByUsername(loginRequest.getUsername());
+
+        // Check if the alumni exists and if the password is correct
         if (alumni == null || !alumni.getPassword().equals(loginRequest.getPassword())) {
-            return ResponseEntity.status(401).body("Invalid credentials");
-        }
-        if (alumni.getStatus().equals("Pending")) {
-            return ResponseEntity.status(403).body("Account is pending approval");
-        } else if (alumni.getStatus().equals("Denied")) {
-            return ResponseEntity.status(403).body("Account has been denied");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
         }
 
-        Map<String, Object> alumniDetails = new HashMap<>();
-        alumniDetails.put("id", alumni.getId());
-        alumniDetails.put("name", alumni.getName());
-        alumniDetails.put("age", alumni.getAge());
-        alumniDetails.put("gender", alumni.getGender());
-        alumniDetails.put("mobilnumber", alumni.getMobilnumber());
-        alumniDetails.put("address", alumni.getAddress());
-        alumniDetails.put("currentEmployment", alumni.getCurrentEmployment());
-        alumniDetails.put("graduationYear", alumni.getGraduationYear());
-        alumniDetails.put("department", alumni.getDepartment());
-        alumniDetails.put("email", alumni.getEmail());
-        alumniDetails.put("status", alumni.getStatus());
+        // Check the status of the alumni account
+        switch (alumni.getStatus()) {
+            case "Pending":
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Account is pending approval");
+            case "Denied":
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Account has been denied");
+            case "Active":
+                // Return success response with alumni details
+                Map<String, Object> alumniDetails = new HashMap<>();
+                alumniDetails.put("id", alumni.getId());
+                alumniDetails.put("name", alumni.getName());
+                alumniDetails.put("age", alumni.getAge());
+                alumniDetails.put("gender", alumni.getGender());
+                alumniDetails.put("mobilnumber", alumni.getMobilnumber());
+                alumniDetails.put("address", alumni.getAddress());
+                alumniDetails.put("currentEmployment", alumni.getCurrentEmployment());
+                alumniDetails.put("graduationYear", alumni.getGraduationYear());
+                alumniDetails.put("department", alumni.getDepartment());
+                alumniDetails.put("email", alumni.getEmail());
+                alumniDetails.put("status", alumni.getStatus());
 
-        return ResponseEntity.ok(alumniDetails);
+                return ResponseEntity.ok(alumniDetails);
+            default:
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unknown account status");
+        }
     }
+ 
 
     @PostMapping("/postjob")
     public ResponseEntity<String> createJobPost(@RequestParam("companyName") String companyName,

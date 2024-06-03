@@ -1,4 +1,4 @@
-package com.ats;
+package com.ats.automatetest;
 
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.By;
